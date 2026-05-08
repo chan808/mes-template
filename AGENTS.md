@@ -227,6 +227,7 @@ rollback strategy
 ```
 
 ## AI Pair-Programming Rules
+- For Codex sub-agent orchestration, use `docs/AI_ORCHESTRATION.md` as the operating guide.
 - Ask AI for a plan before implementing unfamiliar layers.
 - Ask AI to explain generated code in plain language.
 - Ask AI to compare two approaches when unsure.
@@ -311,4 +312,3 @@ Unix-like shells:
 ./gradlew test
 ./gradlew bootRun
 ```
-
