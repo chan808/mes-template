@@ -3,6 +3,7 @@ package com.sainti.mestemplate.item.domain;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ItemTest {
 
@@ -67,5 +68,26 @@ public class ItemTest {
         item.delete();
 
         assertThat(item.isDeleted()).isTrue();
+    }
+
+    @Test
+    void updateItemWithNullStatusFails() {
+        Item item = Item.create(
+                1L,
+                "ITEM-001",
+                "Plastic Resin",
+                ItemType.MATERIAL,
+                "KG",
+                "ABS raw material"
+        );
+
+        assertThatThrownBy(() -> item.update(
+                "Plastic Resin Updated",
+                ItemType.MATERIAL,
+                "BAG",
+                null,
+                "Updated description"
+        )).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Item status is required");
     }
 }

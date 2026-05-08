@@ -66,6 +66,10 @@ public class Item {
             ItemStatus status,
             String description
     ) {
+        if (status == null) {
+            throw new IllegalArgumentException("Item status is required");
+        }
+
         this.itemName = itemName;
         this.itemType = itemType;
         this.unit = unit;
