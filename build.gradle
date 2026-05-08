@@ -18,6 +18,10 @@ repositories {
     mavenCentral()
 }
 
+test {
+    useJUnitPlatform()
+}
+
 dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
@@ -46,6 +50,9 @@ dependencies {
 
     /* Swagger */
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+
+    /* Test */
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
 /* -parameters 플래그: Spring MVC @PathVariable 등 파라미터 이름 인식 */
