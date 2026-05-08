@@ -10,26 +10,39 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "users")
+@Table(
+        name = "users",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_users_tenant_login_id",
+                        columnNames = {"tenant_id", "login_id"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_users_tenant_deleted", columnList = "tenant_id, deleted")
+        }
+)
 public class UserEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "tenant_id", nullable = false)
     private Long tenantId;
 
-    @Column(nullable = false, length = 50)
+    @Column(name = "login_id", nullable = false, length = 50)
     private String loginId;
 
-    @Column(nullable = false, length = 255)
+    @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "display_name", nullable = false, length = 100)
     private String displayName;
 
     @Enumerated(EnumType.STRING)
