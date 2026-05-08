@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: mestemplate
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mestemplate
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_batch_fetch_size: 100
+
+  logging:
+    level:
+      org:
+        hibernate:
+          SQL: debug
+          orm.jdbc.bind: trace
