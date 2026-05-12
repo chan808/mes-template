@@ -1,6 +1,7 @@
 package com.sainti.mestemplate.item.application.port.in;
 
 import com.sainti.mestemplate.item.application.dto.CreateItemCommand;
+import com.sainti.mestemplate.item.application.dto.DeleteItemCommand;
 import com.sainti.mestemplate.item.application.dto.ItemQuery;
 import com.sainti.mestemplate.item.application.dto.ItemResult;
 import com.sainti.mestemplate.item.application.dto.UpdateItemCommand;
@@ -17,5 +18,5 @@ public interface ItemUseCase {
 
     Page<ItemResult> searchItems(Long tenantId, ItemQuery query, Pageable pageable);
 
-    void deleteItem(Long tenantId, Long itemId);
+    void deleteItem(DeleteItemCommand command);
 }

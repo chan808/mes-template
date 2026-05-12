@@ -22,11 +22,21 @@ public class AuthService implements AuthUseCase {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
+    private static final String DUMMY_PASSWORD_HASH =
+            "$2a$10$7EqJtq98hPqEX7fNZaFWoOHi6M6jD9xYl8a9kaI0s5momkGLumZ5y";
+
     @Override
     public LoginResult login(LoginCommand command) {
         User user = userRepositoryPort.findByTenantIdAndLoginId(command.tenantId(), command.loginId())
-                .filter(u -> passwordEncoder.matches(command.rawPassword(), u.getPasswordHash()))
-                .orElseThrow(() -> new BusinessException(AuthErrorCode.INVALID_CREDENTIALS));
+                .orElse(null);
+
+        String passwordHash = user != null ? user.getPasswordHash() : DUMMY_PASSWORD_HASH;
+
+        boolean validCredentials = passwordEncoder.matches(command.rawPassword(), passwordHash);
+
+        if (user == null || !validCredentials) {
+            throw new BusinessException(AuthErrorCode.INVALID_CREDENTIALS);
+        }
 
         if (user.getStatus() != UserStatus.ACTIVE) {
             throw new BusinessException(AuthErrorCode.USER_NOT_ACTIVE);

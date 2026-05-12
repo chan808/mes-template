@@ -43,8 +43,7 @@ public class ItemPersistenceMapper {
                 item.getItemType(),
                 item.getUnit(),
                 item.getStatus(),
-                item.getDescription(),
-                item.isDeleted()
+                item.getDescription()
         );
     }
 }

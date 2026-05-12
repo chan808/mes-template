@@ -6,6 +6,8 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import org.springframework.util.StringUtils;
+
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -28,11 +30,16 @@ public class JwtProvider {
 
     public TokenPayload parseToken(String token) {
         Claims claims = parseClaims(token);
-        return new TokenPayload(
-                Long.valueOf(claims.getSubject()),
-                claims.get("tenantId", Long.class),
-                claims.get("role", String.class)
-        );
+
+        String subject = claims.getSubject();
+        Long tenantId = claims.get("tenantId", Long.class);
+        String role = claims.get("role", String.class);
+
+        if (!StringUtils.hasText(subject) || tenantId == null || !StringUtils.hasText(role)) {
+            throw new IllegalArgumentException("JWT is missing required claims");
+        }
+
+        return new TokenPayload(Long.valueOf(subject), tenantId, role);
     }
 
     public String generateToken(Long userId, Long tenantId, String role) {

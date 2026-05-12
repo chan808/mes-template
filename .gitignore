@@ -1,4 +1,3 @@
-.git/
 HELP.md
 .gradle
 .gradle/
@@ -56,3 +55,7 @@ dist/
 venv/
 .venv/
 __pycache__/
+
+# AI
+.claude/
+AGENTS.md

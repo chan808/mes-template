@@ -42,7 +42,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                 List.of(new SimpleGrantedAuthority("ROLE_" + payload.role()))
                         );
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-            } catch (JwtException e) {
+            } catch (JwtException | IllegalArgumentException e) {
                 SecurityContextHolder.clearContext();
             }
         }

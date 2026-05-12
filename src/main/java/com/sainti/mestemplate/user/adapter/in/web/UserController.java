@@ -7,6 +7,7 @@ import com.sainti.mestemplate.user.adapter.in.web.dto.UserResponse;
 import com.sainti.mestemplate.user.adapter.in.web.dto.UserSearch;
 import com.sainti.mestemplate.user.adapter.in.web.dto.UserUpdateRequest;
 import com.sainti.mestemplate.user.application.dto.CreateUserCommand;
+import com.sainti.mestemplate.user.application.dto.DeleteUserCommand;
 import com.sainti.mestemplate.user.application.dto.UpdateUserCommand;
 import com.sainti.mestemplate.user.application.dto.UserQuery;
 import com.sainti.mestemplate.user.application.port.in.UserUseCase;
@@ -107,7 +108,10 @@ public class UserController {
             @AuthenticationPrincipal MesPrincipal principal,
             @PathVariable Long userId
     ) {
-        userUseCase.deleteUser(principal.tenantId(), userId);
+        DeleteUserCommand command = new DeleteUserCommand(
+                principal.tenantId(), userId, principal.userId()
+        );
+        userUseCase.deleteUser(command);
 
         return ResponseEntity.ok(ApiResponse.successVoid());
     }

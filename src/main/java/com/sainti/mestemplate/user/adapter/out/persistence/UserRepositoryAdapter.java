@@ -1,5 +1,6 @@
 package com.sainti.mestemplate.user.adapter.out.persistence;
 
+import com.sainti.mestemplate.user.adapter.out.persistence.entity.UserEntity;
 import com.sainti.mestemplate.user.adapter.out.persistence.mapper.UserPersistenceMapper;
 import com.sainti.mestemplate.user.adapter.out.persistence.repository.UserJpaRepository;
 import com.sainti.mestemplate.user.application.dto.UserQuery;
@@ -32,10 +33,7 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
                     userJpaRepository.save(userPersistenceMapper.toEntity(user))
             );
         }
-        // id가 있으면 이미 서비스 트랜잭션에서 로드된 managed entity가 1차 캐시에 존재한다.
-        // 새 객체를 만들지 않고 필드만 수정 → JPA dirty-checking이 UPDATE를 생성,
-        // saveAndFlush로 @PreUpdate를 즉시 발동시켜 updatedAt을 반영한다.
-        UserEntity entity = userJpaRepository.findById(user.getId())
+        UserEntity entity = userJpaRepository.findByTenantIdAndIdAndDeletedFalse(user.getTenantId(), user.getId())
                 .orElseThrow(() -> new IllegalStateException("UserEntity not found: " + user.getId()));
         userPersistenceMapper.updateEntity(entity, user);
         return userPersistenceMapper.toDomain(userJpaRepository.saveAndFlush(entity));
@@ -56,5 +54,12 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     @Override
     public Page<UserResult> search(Long tenantId, UserQuery query, Pageable pageable) {
         return userJpaRepository.searchUsers(tenantId, query, pageable);
+    }
+
+    @Override
+    public void softDelete(Long tenantId, Long userId, Long deletedBy) {
+        UserEntity entity = userJpaRepository.findByTenantIdAndIdAndDeletedFalse(tenantId, userId)
+                .orElseThrow(() -> new IllegalStateException("UserEntity not found: " + userId));
+        entity.softDelete(deletedBy);
     }
 }

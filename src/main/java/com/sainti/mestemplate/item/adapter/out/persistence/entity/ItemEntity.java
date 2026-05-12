@@ -18,9 +18,10 @@ import jakarta.persistence.UniqueConstraint;
 @Table(
         name = "items",
         uniqueConstraints = {
+                // deleted 포함으로 soft delete 충돌 방지 — Flyway 도입 시 WHERE deleted = false partial index로 교체
                 @UniqueConstraint(
-                        name = "uk_items_tenant_item_code",
-                        columnNames = {"tenant_id", "item_code"}
+                        name = "uk_items_tenant_item_code_deleted",
+                        columnNames = {"tenant_id", "item_code", "deleted"}
                 )
         },
         indexes = {
@@ -122,15 +123,16 @@ public class ItemEntity extends BaseEntity {
         return deleted;
     }
 
-    public void updateFromDomain(String itemName, ItemType itemType, String unit, ItemStatus status, String description, boolean deleted) {
+    public void updateFromDomain(String itemName, ItemType itemType, String unit, ItemStatus status, String description) {
         this.itemName = itemName;
         this.itemType = itemType;
         this.unit = unit;
         this.status = status;
         this.description = description;
-        if (!this.deleted && deleted) {
-            this.deleted = true;
-            softDelete();
-        }
+    }
+
+    public void softDelete(Long deletedBy) {
+        this.deleted = true;
+        super.softDelete(deletedBy);
     }
 }

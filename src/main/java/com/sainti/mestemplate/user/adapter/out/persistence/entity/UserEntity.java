@@ -18,9 +18,10 @@ import jakarta.persistence.UniqueConstraint;
 @Table(
         name = "users",
         uniqueConstraints = {
+                // deleted 포함으로 soft delete 충돌 방지 — Flyway 도입 시 WHERE deleted = false partial index로 교체
                 @UniqueConstraint(
-                        name = "uk_users_tenant_login_id",
-                        columnNames = {"tenant_id", "login_id"}
+                        name = "uk_users_tenant_login_id_deleted",
+                        columnNames = {"tenant_id", "login_id", "deleted"}
                 )
         },
         indexes = {
@@ -113,14 +114,14 @@ public class UserEntity extends BaseEntity {
         return deleted;
     }
 
-    // update 경로에서 managed entity에 도메인 상태를 반영한다. 새 객체를 만들지 않아 createdAt 등 audit 필드가 유지된다.
-    public void updateFromDomain(String displayName, UserRole role, UserStatus status, boolean deleted) {
+    public void updateFromDomain(String displayName, UserRole role, UserStatus status) {
         this.displayName = displayName;
         this.role = role;
         this.status = status;
-        if (!this.deleted && deleted) {
-            this.deleted = true;
-            softDelete();
-        }
+    }
+
+    public void softDelete(Long deletedBy) {
+        this.deleted = true;
+        super.softDelete(deletedBy);
     }
 }

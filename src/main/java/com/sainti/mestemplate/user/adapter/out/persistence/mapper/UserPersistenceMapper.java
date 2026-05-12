@@ -39,8 +39,7 @@ public class UserPersistenceMapper {
         entity.updateFromDomain(
                 user.getDisplayName(),
                 user.getRole(),
-                user.getStatus(),
-                user.isDeleted()
+                user.getStatus()
         );
     }
 }

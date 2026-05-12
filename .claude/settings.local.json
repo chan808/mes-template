@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\ckswh\\\\Desktop\\\\2026\\\\mestemplate\" -Directory)",
-      "Bash(Select-Object Name)"
-    ]
-  }
-}

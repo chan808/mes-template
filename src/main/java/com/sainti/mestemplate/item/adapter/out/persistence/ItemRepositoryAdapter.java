@@ -33,7 +33,7 @@ public class ItemRepositoryAdapter implements ItemRepositoryPort {
                     itemJpaRepository.save(itemPersistenceMapper.toEntity(item))
             );
         }
-        ItemEntity entity = itemJpaRepository.findById(item.getId())
+        ItemEntity entity = itemJpaRepository.findByTenantIdAndIdAndDeletedFalse(item.getTenantId(), item.getId())
                 .orElseThrow(() -> new IllegalStateException("ItemEntity not found: " + item.getId()));
         itemPersistenceMapper.updateEntity(entity, item);
         return itemPersistenceMapper.toDomain(itemJpaRepository.saveAndFlush(entity));
@@ -48,5 +48,12 @@ public class ItemRepositoryAdapter implements ItemRepositoryPort {
     @Override
     public Page<ItemResult> search(Long tenantId, ItemQuery query, Pageable pageable) {
         return itemJpaRepository.searchItems(tenantId, query, pageable);
+    }
+
+    @Override
+    public void softDelete(Long tenantId, Long itemId, Long deletedBy) {
+        ItemEntity entity = itemJpaRepository.findByTenantIdAndIdAndDeletedFalse(tenantId, itemId)
+                .orElseThrow(() -> new IllegalStateException("ItemEntity not found: " + itemId));
+        entity.softDelete(deletedBy);
     }
 }

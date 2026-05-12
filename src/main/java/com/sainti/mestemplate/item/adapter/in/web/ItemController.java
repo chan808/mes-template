@@ -7,6 +7,7 @@ import com.sainti.mestemplate.item.adapter.in.web.dto.ItemResponse;
 import com.sainti.mestemplate.item.adapter.in.web.dto.ItemSearch;
 import com.sainti.mestemplate.item.adapter.in.web.dto.ItemUpdateRequest;
 import com.sainti.mestemplate.item.application.dto.CreateItemCommand;
+import com.sainti.mestemplate.item.application.dto.DeleteItemCommand;
 import com.sainti.mestemplate.item.application.dto.ItemQuery;
 import com.sainti.mestemplate.item.application.dto.UpdateItemCommand;
 import com.sainti.mestemplate.item.application.port.in.ItemUseCase;
@@ -110,7 +111,10 @@ public class ItemController {
             @AuthenticationPrincipal MesPrincipal principal,
             @PathVariable Long itemId
     ) {
-        itemUseCase.deleteItem(principal.tenantId(), itemId);
+        DeleteItemCommand command = new DeleteItemCommand(
+                principal.tenantId(), itemId, principal.userId()
+        );
+        itemUseCase.deleteItem(command);
 
         return ResponseEntity.ok(ApiResponse.successVoid());
     }

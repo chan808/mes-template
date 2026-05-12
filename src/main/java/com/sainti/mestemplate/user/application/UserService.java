@@ -2,6 +2,7 @@ package com.sainti.mestemplate.user.application;
 
 import com.sainti.mestemplate.global.error.BusinessException;
 import com.sainti.mestemplate.user.application.dto.CreateUserCommand;
+import com.sainti.mestemplate.user.application.dto.DeleteUserCommand;
 import com.sainti.mestemplate.user.application.dto.UpdateUserCommand;
 import com.sainti.mestemplate.user.application.dto.UserQuery;
 import com.sainti.mestemplate.user.application.dto.UserResult;
@@ -75,13 +76,13 @@ public class UserService implements UserUseCase {
     }
 
     @Override
-    public void deleteUser(Long tenantId, Long userId) {
-        User user = userRepositoryPort.findByTenantIdAndId(tenantId, userId)
+    public void deleteUser(DeleteUserCommand command) {
+        User user = userRepositoryPort.findByTenantIdAndId(command.tenantId(), command.userId())
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
         user.delete();
 
-        userRepositoryPort.save(user);
+        userRepositoryPort.softDelete(command.tenantId(), command.userId(), command.deletedBy());
     }
 
     private UserResult toResult(User user) {
