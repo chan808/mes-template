@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,6 +43,7 @@ class ItemServiceTest {
                 "ABS raw material"
         );
 
+        LocalDateTime now = LocalDateTime.now();
         Item savedItem = Item.reconstitute(
                 10L,
                 1L,
@@ -51,7 +53,9 @@ class ItemServiceTest {
                 "KG",
                 ItemStatus.ACTIVE,
                 "ABS raw material",
-                false
+                false,
+                now,
+                now
         );
 
         when(itemRepositoryPort.existsByTenantIdAndItemCode(1L, "ITEM-001")).thenReturn(false);
@@ -64,6 +68,8 @@ class ItemServiceTest {
         assertThat(result.itemCode()).isEqualTo("ITEM-001");
         assertThat(result.status()).isEqualTo(ItemStatus.ACTIVE);
         assertThat(result.deleted()).isFalse();
+        assertThat(result.createdAt()).isEqualTo(now);
+        assertThat(result.updatedAt()).isEqualTo(now);
     }
 
     @Test
@@ -104,7 +110,9 @@ class ItemServiceTest {
                 "KG",
                 ItemStatus.ACTIVE,
                 "ABS raw material",
-                false
+                false,
+                LocalDateTime.now(),
+                LocalDateTime.now()
         );
 
         when(itemRepositoryPort.findByTenantIdAndId(1L, 10L)).thenReturn(Optional.of(item));

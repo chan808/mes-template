@@ -10,4 +10,6 @@ public interface UserJpaRepository extends JpaRepository<UserEntity, Long>, User
     boolean existsByTenantIdAndLoginIdAndDeletedFalse(Long tenantId, String loginId);
 
     Optional<UserEntity> findByTenantIdAndIdAndDeletedFalse(Long tenantId, Long id);
+
+    Optional<UserEntity> findByTenantIdAndLoginIdAndDeletedFalse(Long tenantId, String loginId);
 }

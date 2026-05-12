@@ -1,5 +1,6 @@
 package com.sainti.mestemplate.user.adapter.out.persistence;
 
+import com.sainti.mestemplate.user.adapter.out.persistence.entity.UserEntity;
 import com.sainti.mestemplate.user.adapter.out.persistence.mapper.UserPersistenceMapper;
 import com.sainti.mestemplate.user.adapter.out.persistence.repository.UserJpaRepository;
 import com.sainti.mestemplate.user.application.dto.UserQuery;
@@ -27,9 +28,15 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
 
     @Override
     public User save(User user) {
-        return userPersistenceMapper.toDomain(
-                userJpaRepository.save(userPersistenceMapper.toEntity(user))
-        );
+        if (user.getId() == null) {
+            return userPersistenceMapper.toDomain(
+                    userJpaRepository.save(userPersistenceMapper.toEntity(user))
+            );
+        }
+        UserEntity entity = userJpaRepository.findByTenantIdAndIdAndDeletedFalse(user.getTenantId(), user.getId())
+                .orElseThrow(() -> new IllegalStateException("UserEntity not found: " + user.getId()));
+        userPersistenceMapper.updateEntity(entity, user);
+        return userPersistenceMapper.toDomain(userJpaRepository.saveAndFlush(entity));
     }
 
     @Override
@@ -39,7 +46,20 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     }
 
     @Override
+    public Optional<User> findByTenantIdAndLoginId(Long tenantId, String loginId) {
+        return userJpaRepository.findByTenantIdAndLoginIdAndDeletedFalse(tenantId, loginId)
+                .map(userPersistenceMapper::toDomain);
+    }
+
+    @Override
     public Page<UserResult> search(Long tenantId, UserQuery query, Pageable pageable) {
         return userJpaRepository.searchUsers(tenantId, query, pageable);
+    }
+
+    @Override
+    public void softDelete(Long tenantId, Long userId, Long deletedBy) {
+        UserEntity entity = userJpaRepository.findByTenantIdAndIdAndDeletedFalse(tenantId, userId)
+                .orElseThrow(() -> new IllegalStateException("UserEntity not found: " + userId));
+        entity.softDelete(deletedBy);
     }
 }

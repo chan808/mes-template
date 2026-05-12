@@ -2,6 +2,7 @@ package com.sainti.mestemplate.item.application;
 
 import com.sainti.mestemplate.global.error.BusinessException;
 import com.sainti.mestemplate.item.application.dto.CreateItemCommand;
+import com.sainti.mestemplate.item.application.dto.DeleteItemCommand;
 import com.sainti.mestemplate.item.application.dto.ItemQuery;
 import com.sainti.mestemplate.item.application.dto.ItemResult;
 import com.sainti.mestemplate.item.application.dto.UpdateItemCommand;
@@ -75,13 +76,13 @@ public class ItemService implements ItemUseCase {
     }
 
     @Override
-    public void deleteItem(Long tenantId, Long itemId) {
-        Item item = itemRepositoryPort.findByTenantIdAndId(tenantId, itemId)
+    public void deleteItem(DeleteItemCommand command) {
+        Item item = itemRepositoryPort.findByTenantIdAndId(command.tenantId(), command.itemId())
                 .orElseThrow(() -> new BusinessException(ItemErrorCode.ITEM_NOT_FOUND));
 
         item.delete();
 
-        itemRepositoryPort.save(item);
+        itemRepositoryPort.softDelete(command.tenantId(), command.itemId(), command.deletedBy());
     }
 
     private ItemResult toResult(Item item) {
@@ -95,8 +96,8 @@ public class ItemService implements ItemUseCase {
                 item.getStatus(),
                 item.getDescription(),
                 item.isDeleted(),
-                null,
-                null
+                item.getCreatedAt(),
+                item.getUpdatedAt()
         );
     }
 }

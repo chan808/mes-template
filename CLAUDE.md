@@ -1,314 +1,97 @@
-# Project: mestemplate
+# mestemplate
 
-## Purpose
-`mestemplate` is a learning-first backend template for building a reusable MES platform.
+재사용 가능한 MES 백엔드 플랫폼 템플릿. 고객별 소스 포크 없이 설정·어댑터로 다고객 지원이 목표.
 
-This project is not a customer-specific SI codebase. It should be developed as a clean platform foundation that can later be adapted to different manufacturers with minimal source-code changes.
+## Stack
 
-The developer is expected to write the code directly while using AI as a mentor, reviewer, and pair-programming assistant. Do not blindly paste large generated code. Prefer small, understandable steps.
+* **Runtime**: Java 17 / Spring Boot 3.x / Gradle
+* **DB**: PostgreSQL / Spring Data JPA / QueryDSL (복잡 조회) / Flyway (미도입 — 프로덕션 전 필수)
+* **Auth**: Spring Security (Stateless) / JWT (access token 구현, refresh token 미구현)
+* **기타**: Lombok / Manual Mapper (MapStruct 제거) / springdoc-openapi / Testcontainers
 
-## Development Mindset
-- Build slowly and intentionally.
-- Understand each layer before adding the next one.
-- Keep the first version simple, but leave room for platform extension.
-- Prefer a working vertical slice over a wide unfinished architecture.
-- Ask AI to explain, review, compare alternatives, and generate small examples.
-- After AI suggests code, read it line by line and adjust it to the project convention.
-- Do not add abstractions only because they look professional.
-- Add an abstraction when it protects a real boundary or removes repeated complexity.
+## Modules
 
-## Target Baseline
-- Java 17 or newer
-- Spring Boot 3.x
-- Gradle
-- PostgreSQL
-- Spring MVC REST API
-- Spring Security
-- JWT first, OAuth2/OIDC later if needed
-- Spring Data JPA / Hibernate
-- QueryDSL for complex read queries
-- Flyway or Liquibase for DB migration
-- Lombok, used carefully
-- MapStruct or manual mappers, choose one convention and stay consistent
-- springdoc-openapi / Swagger
-- Testcontainers for integration tests when possible
-- Spring Boot Actuator for production readiness
+* `global`: ApiResponse, ErrorCode, BusinessException, BaseEntity, Security (JWT, Filter, Principal)
+* `auth`: 로그인 API, JWT 발급
+* `item`: 품목 마스터 CRUD + QueryDSL 검색
+* `user`: 사용자 마스터 CRUD + QueryDSL 검색 + 비밀번호 해시
 
-## Architecture Direction
-Start as a modular monolith.
+## Docs
 
-Do not start with microservices. For an MES platform, module boundaries, data ownership, deployment needs, tenant isolation, and operational maturity must be clear before splitting services.
+* `docs/ARCHITECTURE.md`: 패키지 구조, 요청·응답 흐름, 멀티테넌트, 인증, 영속성 규칙, Decision Log
+* `docs/PRD.md`: 제품 목표, 구현 현황, 로드맵
+* `docs/ADR.md`: 기술 결정 기록 (선택 / 이유 / 트레이드오프)
 
-Recommended package flow for each feature:
+## Principles
 
-```text
-adapter/in/web
--> application
--> domain
--> application port
--> adapter/out/persistence
--> database
+* 결정이 필요하면 `docs/ARCHITECTURE.md` 확인 → Decision Log에 없으면 `docs/ADR.md`에 추가
+* 구현은 minimal but complete. 불필요한 추상화 금지
+* 한 수직 슬라이스를 끝까지 완성한 후 다음 모듈로 이동
+* 새 모듈·API 변경·규칙 변경 시 관련 docs도 함께 업데이트
+* 고객별 소스 포크 금지 — 설정·전략 인터페이스·어댑터로 확장
+
+## Architecture Rules
+
+**요청 흐름**
+```
+Controller → Request/Search → Command/Query → UseCase → Service
+→ Domain → RepositoryPort → RepositoryAdapter → Mapper → Entity/JPA/QueryDSL → DB
 ```
 
-Recommended request flow:
+**레이어 경계**
+* Service는 RepositoryPort만 의존 (JPA Repository 직접 참조 금지)
+* Controller는 JPA Entity 노출 금지
+* 매퍼는 도메인 ↔ 엔티티 변환 전담 (도메인이 엔티티를 import하지 않음)
 
-```text
-Controller
--> web dto (Request/Search)
--> application dto (Command/Query)
--> UseCase
--> Service
--> Domain
--> RepositoryPort
--> RepositoryAdapter
--> Mapper
--> Entity / Repository / QueryDSL
--> DB
-```
+**멀티테넌트**
+* 모든 업무 테이블에 `tenant_id` 필수
+* 모든 조회·쓰기에 tenant 범위 포함 — Service 레이어뿐 아니라 **Adapter 레이어도** tenant-scoped 조회 사용
+* `softDelete()` 포트 시그니처는 반드시 `tenantId` 포함
 
-Recommended response flow:
+**영속성**
+* `save()` update path: `findByTenantIdAndId()`로 managed entity 로드 후 필드 갱신 → `saveAndFlush()`. 새 엔티티 객체로 merge 금지 (응답에 `createdAt: null` 발생)
+* Soft delete unique 제약: `@UniqueConstraint(tenant_id, code, deleted)` — Flyway 도입 시 `WHERE deleted = false` partial index로 교체
+* 단순 저장·존재 확인·ID 조회 → Spring Data JPA / 목록·검색·동적 필터·조인 → QueryDSL
 
-```text
-DB
--> QueryDSL/JPA
--> application dto (Result)
--> web dto (Response)
--> ApiResponse
--> client
-```
+**인증**
+* `parseToken()`은 `sub`·`tenantId`·`role` 누락 시 `IllegalArgumentException` throw
+* Filter는 `JwtException | IllegalArgumentException` catch
+* 이후 요청은 `@AuthenticationPrincipal MesPrincipal`로 `userId`·`tenantId` 사용
 
-## Package Responsibilities
-- `adapter/in/web`: HTTP API entry point. Routes, HTTP methods, request binding, response wrapping.
-- `adapter/in/web/dto`: External API contract DTOs.
-  - `Search`: GET query parameters.
-  - `Request`: POST/PUT/PATCH request body.
-  - `Response`: API response body.
-- `application`: Use cases and business flow orchestration.
-- `application/dto`: Internal use-case DTOs.
-  - `Query`: read conditions.
-  - `Command`: create/update/delete commands.
-  - `Result`: internal read results.
-- `domain`: Business objects, invariants, and state changes.
-- `RepositoryPort`: Application-layer contract for persistence needs.
-- `adapter/out/persistence`: Persistence adapter implementation.
-- `mapper`: Domain/entity conversion.
-- `entity`: JPA table mapping.
-- `repository`: Spring Data JPA and QueryDSL repositories.
+## Comment Style
 
-## First Implementation Goal
-Build one complete vertical slice before creating many modules.
-
-Recommended first slice:
-
-```text
-item master
-```
-
-Suggested flow:
-
-```text
-Create item
-Update item
-Get item by id
-Search item list
-Soft delete item
-```
-
-After the first slice is understood, repeat the same pattern for:
-
-```text
-material
-inventory
-work order
-production result
-quality inspection
-equipment
-lot tracking
-```
-
-## Platform Principles
-- Do not hard-code customer-specific behavior into the core.
-- Avoid customer branching such as `if (companyCode.equals("A"))`.
-- Prefer configuration, feature flags, workflow definitions, strategy interfaces, or customer-specific adapters.
-- Keep common MES concepts in the core:
-  - tenant/company/factory/site
-  - user/role/permission
-  - item/material/BOM
-  - inventory
-  - production plan/work order/result
-  - quality inspection
-  - equipment downtime
-  - mold management
-  - lot tracking
-  - file attachment
-  - audit log
-  - common code
-  - i18n
-- Treat customer-specific requirements as candidates for extension points, not immediate forks.
-- Promote customization to platform capability only after the pattern appears repeatedly.
-
-## Multi-Tenant Readiness
-For an external MES platform, tenant isolation must be designed early.
-
-Consider and document the chosen approach:
-
-```text
-shared DB with tenant_id
-separate schema per tenant
-separate DB per tenant
-```
-
-For the first learning version, prefer the simplest explicit model:
-
-```text
-tenant_id on business tables
-```
-
-Every external API and persistence query should eventually respect tenant boundaries. Object-level authorization and tenant data isolation are mandatory.
+* 한 줄 주석만 사용, 한국어로 작성
+* 코드만으로 의도가 불명확하거나 숨겨진 제약·워크어라운드가 있을 때만 작성
 
 ## Security Rules
-- Never commit secrets, DB passwords, JWT secrets, or production credentials.
-- Use environment variables, secret managers, or externalized configuration.
-- Add Bean Validation to request DTOs.
-- Prefer enum/value objects for status fields instead of raw strings when the state model stabilizes.
-- Check object-level authorization for APIs that access data by ID.
-- Keep CORS, cookie, JWT, and token expiration policies environment-specific.
-- Follow OWASP API Security Top 10 as a baseline.
 
-## API Rules
-- Keep API versioning explicit, e.g. `/api/v1/...`.
-- Use consistent response wrappers and error codes.
-- Keep pagination and sorting rules consistent across modules.
-- Do not expose JPA entities directly through controllers.
-- Keep request DTOs separate from application commands, even if fields are currently similar.
-- Document APIs with Swagger annotations when useful.
-- Do not rely on Swagger as the only API contract.
+* 시크릿·DB 비밀번호·JWT 시크릿 커밋 금지 — 환경변수 사용
+* Request DTO에 Bean Validation 필수
+* ID로 리소스 접근하는 API는 tenant 범위 쿼리로 격리 (객체 수준 인가는 Phase 3)
+* OWASP API Security Top 10 기준 준수
 
-## Persistence Rules
-- Do not let application services depend directly on JPA repositories.
-- Services should use repository ports.
-- Persistence adapters should convert domain objects to JPA entities.
-- Use QueryDSL for complex read queries.
-- Use Flyway or Liquibase before treating this as a production platform.
-- Design indexes deliberately for list/search APIs.
-- Keep soft delete, audit fields, and tenant fields consistent.
+## Testing
 
-## Testing Direction
-Add tests in this order:
+* 테스트 우선순위: 도메인 → 서비스 → 레포지토리 통합 → API 통합 → 인가 → 테넌트 격리
+* Repository 통합 테스트는 Testcontainers + 실 PostgreSQL 사용
+* 핵심 시나리오(성공/실패)만 테스트, 과도한 mock 지양
 
-```text
-domain tests
-service tests
-repository integration tests
-API integration tests
-authorization tests
-tenant isolation tests
-```
+## Roadmap
 
-Use Testcontainers for PostgreSQL integration tests when possible.
-
-For learning, write at least one test per layer for the first vertical slice.
-
-## Observability And Operations
-Before external service launch, add:
-
-```text
-Spring Boot Actuator health checks
-structured JSON logs
-request ID / trace ID propagation
-metrics for HTTP, DB, JVM, and business events
-error tracking
-slow query monitoring
-deployment profiles for local, staging, and production
-CI/CD pipeline
-Docker image build
-DB migration step
-rollback strategy
-```
-
-## AI Pair-Programming Rules
-- For Codex sub-agent orchestration, use `docs/AI_ORCHESTRATION.md` as the operating guide.
-- Ask AI for a plan before implementing unfamiliar layers.
-- Ask AI to explain generated code in plain language.
-- Ask AI to compare two approaches when unsure.
-- Ask AI to review code for bugs, missing validation, security risks, and architectural drift.
-- Keep prompts specific:
-  - "Create only the domain object and tests."
-  - "Review this controller for API design issues."
-  - "Explain why RepositoryPort exists here."
-- Avoid prompts that generate too much at once:
-  - "Build the whole MES platform."
-  - "Generate all modules."
-- After AI changes code, run tests or at least compile.
-- Never accept code that you cannot explain.
-
-## Development Process
-- Build one vertical slice end to end.
-- Keep changes small and easy to review.
-- Do not create many empty modules before the first feature works.
-- Do not refactor unrelated code while implementing one feature.
-- Prefer meaningful tests over broad mechanical coverage.
-- Use conventional commits when committing:
-  - `feat:`
-  - `fix:`
-  - `docs:`
-  - `refactor:`
-  - `test:`
-  - `chore:`
-
-## Suggested Learning Path
-1. Project setup:
-   - Gradle project structure.
-   - Spring Boot application entry point.
-   - `application.yml` and profiles.
-   - PostgreSQL connection.
-2. First vertical slice:
-   - Controller.
-   - web DTOs.
-   - application DTOs.
-   - UseCase.
-   - Service.
-   - Domain.
-   - RepositoryPort.
-   - RepositoryAdapter.
-   - Mapper.
-   - Entity.
-   - Repository / QueryDSL.
-3. Cross-cutting basics:
-   - Common response format.
-   - Exception handling.
-   - Bean Validation.
-   - Base entity fields.
-   - Soft delete.
-4. Platform basics:
-   - Tenant model.
-   - User/role/permission model.
-   - Audit logging.
-   - Common code.
-   - Configurable fields.
-5. Production readiness:
-   - DB migration.
-   - Tests.
-   - Actuator.
-   - Logging.
-   - Docker.
-   - CI/CD.
+| Phase | 내용 | 상태 |
+|---|---|---|
+| 0 | 플랫폼 기반 (global, item, user, JWT 인증) | ✅ |
+| 1 | 마스터 데이터 (warehouse, location) | ⬜ |
+| 2 | 재고 흐름 (receiving, issue, balance, 이동 이력) | ⬜ |
+| 3 | 인가 (role 기반 접근 제한, refresh token, 테넌트 격리 테스트) | ⚠️ 일부 |
+| 4 | 생산 기초 (work order, 실적, lot) | ⬜ |
+| 5 | 품질·설비 | ⬜ |
+| 6 | 프로덕션 준비 (Flyway, Docker, CI/CD, Actuator, 로그) | ⬜ |
 
 ## Common Commands
-Use the Gradle wrapper.
-
-Windows:
 
 ```powershell
 .\gradlew.bat clean build
 .\gradlew.bat test
 .\gradlew.bat bootRun
-```
-
-Unix-like shells:
-
-```bash
-./gradlew clean build
-./gradlew test
-./gradlew bootRun
 ```

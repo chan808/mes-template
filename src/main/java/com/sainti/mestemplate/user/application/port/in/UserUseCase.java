@@ -1,6 +1,7 @@
 package com.sainti.mestemplate.user.application.port.in;
 
 import com.sainti.mestemplate.user.application.dto.CreateUserCommand;
+import com.sainti.mestemplate.user.application.dto.DeleteUserCommand;
 import com.sainti.mestemplate.user.application.dto.UpdateUserCommand;
 import com.sainti.mestemplate.user.application.dto.UserQuery;
 import com.sainti.mestemplate.user.application.dto.UserResult;
@@ -17,5 +18,5 @@ public interface UserUseCase {
 
     Page<UserResult> searchUsers(Long tenantId, UserQuery query, Pageable pageable);
 
-    void deleteUser(Long tenantId, Long userId);
+    void deleteUser(DeleteUserCommand command);
 }

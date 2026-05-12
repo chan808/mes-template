@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,6 +47,7 @@ class UserServiceTest {
                 UserRole.MES_OPERATOR
         );
 
+        LocalDateTime now = LocalDateTime.now();
         User savedUser = User.reconstitute(
                 10L,
                 1L,
@@ -54,7 +56,9 @@ class UserServiceTest {
                 "Operator One",
                 UserRole.MES_OPERATOR,
                 UserStatus.ACTIVE,
-                false
+                false,
+                now,
+                now
         );
 
         when(userRepositoryPort.existsByTenantIdAndLoginId(1L, "operator01")).thenReturn(false);
@@ -69,6 +73,8 @@ class UserServiceTest {
         assertThat(result.role()).isEqualTo(UserRole.MES_OPERATOR);
         assertThat(result.status()).isEqualTo(UserStatus.ACTIVE);
         assertThat(result.deleted()).isFalse();
+        assertThat(result.createdAt()).isEqualTo(now);
+        assertThat(result.updatedAt()).isEqualTo(now);
 
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         verify(userRepositoryPort).save(captor.capture());
@@ -113,7 +119,9 @@ class UserServiceTest {
                 "Operator One",
                 UserRole.MES_OPERATOR,
                 UserStatus.ACTIVE,
-                false
+                false,
+                LocalDateTime.now(),
+                LocalDateTime.now()
         );
 
         when(userRepositoryPort.findByTenantIdAndId(1L, 10L)).thenReturn(Optional.of(user));

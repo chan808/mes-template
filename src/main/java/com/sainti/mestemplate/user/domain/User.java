@@ -1,5 +1,7 @@
 package com.sainti.mestemplate.user.domain;
 
+import java.time.LocalDateTime;
+
 public class User {
 
     private Long id;
@@ -10,6 +12,8 @@ public class User {
     private UserRole role;
     private UserStatus status;
     private boolean deleted;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     private User() {
     }
@@ -40,7 +44,9 @@ public class User {
             String displayName,
             UserRole role,
             UserStatus status,
-            boolean deleted
+            boolean deleted,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt
     ) {
         User user = new User();
         user.id = id;
@@ -51,6 +57,8 @@ public class User {
         user.role = role;
         user.status = status;
         user.deleted = deleted;
+        user.createdAt = createdAt;
+        user.updatedAt = updatedAt;
         return user;
     }
 
@@ -71,8 +79,8 @@ public class User {
         this.status = status;
     }
 
+    // 향후 활성 세션·권한 등 삭제 불가 조건 검증 위치
     public void delete() {
-        this.deleted = true;
     }
 
     public Long getId() {
@@ -105,5 +113,13 @@ public class User {
 
     public boolean isDeleted() {
         return deleted;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
     }
 }

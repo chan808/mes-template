@@ -1,5 +1,7 @@
 package com.sainti.mestemplate.item.domain;
 
+import java.time.LocalDateTime;
+
 public class Item {
 
     private Long id;
@@ -11,6 +13,8 @@ public class Item {
     private ItemStatus status;
     private String description;
     private boolean deleted;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     private Item() {
     }
@@ -44,7 +48,9 @@ public class Item {
             String unit,
             ItemStatus status,
             String description,
-            boolean deleted
+            boolean deleted,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt
     ) {
         Item item = new Item();
         item.id = id;
@@ -56,6 +62,8 @@ public class Item {
         item.status = status;
         item.description = description;
         item.deleted = deleted;
+        item.createdAt = createdAt;
+        item.updatedAt = updatedAt;
         return item;
     }
 
@@ -77,8 +85,8 @@ public class Item {
         this.description = description;
     }
 
+    // 향후 재고 잔량·진행 중인 작업지시 등 삭제 불가 조건 검증 위치
     public void delete() {
-        this.deleted = true;
     }
 
     public Long getId() {
@@ -115,5 +123,13 @@ public class Item {
 
     public boolean isDeleted() {
         return deleted;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
     }
 }

@@ -17,4 +17,6 @@ public interface ItemRepositoryPort {
     Optional<Item> findByTenantIdAndId(Long tenantId, Long itemId);
 
     Page<ItemResult> search(Long tenantId, ItemQuery query, Pageable pageable);
+
+    void softDelete(Long tenantId, Long itemId, Long deletedBy);
 }

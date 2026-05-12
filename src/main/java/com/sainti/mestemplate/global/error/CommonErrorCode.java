@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 
 public enum CommonErrorCode implements ErrorCode {
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "COMMON_001", "Invalid input"),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "COMMON_002", "Authentication required"),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_999", "Internal server error");
 
     private final HttpStatus status;
