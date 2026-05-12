@@ -7,6 +7,7 @@ import com.sainti.mestemplate.global.security.MesPrincipal;
 import com.sainti.mestemplate.global.security.SecurityConfig;
 import com.sainti.mestemplate.user.adapter.in.web.dto.UserCreateRequest;
 import com.sainti.mestemplate.user.application.dto.CreateUserCommand;
+import com.sainti.mestemplate.user.application.dto.DeleteUserCommand;
 import com.sainti.mestemplate.user.application.dto.UserResult;
 import com.sainti.mestemplate.user.application.port.in.UserUseCase;
 import com.sainti.mestemplate.user.domain.UserRole;
@@ -195,6 +196,6 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("OK"));
 
-        verify(userUseCase).deleteUser(1L, 10L);
+        verify(userUseCase).deleteUser(new DeleteUserCommand(1L, 10L, 100L));
     }
 }

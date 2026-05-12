@@ -2,6 +2,7 @@ package com.sainti.mestemplate.user.application;
 
 import com.sainti.mestemplate.global.error.BusinessException;
 import com.sainti.mestemplate.user.application.dto.CreateUserCommand;
+import com.sainti.mestemplate.user.application.dto.DeleteUserCommand;
 import com.sainti.mestemplate.user.application.dto.UserResult;
 import com.sainti.mestemplate.user.application.port.out.UserRepositoryPort;
 import com.sainti.mestemplate.user.domain.User;
@@ -126,11 +127,9 @@ class UserServiceTest {
 
         when(userRepositoryPort.findByTenantIdAndId(1L, 10L)).thenReturn(Optional.of(user));
 
-        userService.deleteUser(1L, 10L);
+        userService.deleteUser(new DeleteUserCommand(1L, 10L, 99L));
 
-        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
-        verify(userRepositoryPort).save(captor.capture());
-
-        assertThat(captor.getValue().isDeleted()).isTrue();
+        verify(userRepositoryPort).softDelete(1L, 10L, 99L);
+        verify(userRepositoryPort, org.mockito.Mockito.never()).save(any());
     }
 }

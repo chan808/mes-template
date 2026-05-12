@@ -3,6 +3,7 @@ package com.sainti.mestemplate.user.domain;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserTest {
@@ -48,7 +49,7 @@ class UserTest {
     }
 
     @Test
-    void deleteUser() {
+    void deleteDoesNotThrowForDeletableUser() {
         User user = User.create(
                 1L,
                 "operator01",
@@ -57,9 +58,7 @@ class UserTest {
                 UserRole.MES_OPERATOR
         );
 
-        user.delete();
-
-        assertThat(user.isDeleted()).isTrue();
+        assertThatNoException().isThrownBy(user::delete);
     }
 
     @Test

@@ -6,6 +6,7 @@ import com.sainti.mestemplate.global.security.JwtProvider;
 import com.sainti.mestemplate.global.security.MesPrincipal;
 import com.sainti.mestemplate.global.security.SecurityConfig;
 import com.sainti.mestemplate.item.adapter.in.web.dto.ItemCreateRequest;
+import com.sainti.mestemplate.item.application.dto.DeleteItemCommand;
 import com.sainti.mestemplate.item.application.dto.ItemResult;
 import com.sainti.mestemplate.item.application.port.in.ItemUseCase;
 import com.sainti.mestemplate.item.domain.ItemStatus;
@@ -203,6 +204,6 @@ ItemControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("OK"));
 
-        verify(itemUseCase).deleteItem(1L, 10L);
+        verify(itemUseCase).deleteItem(new DeleteItemCommand(1L, 10L, 100L));
     }
 }

@@ -2,6 +2,7 @@ package com.sainti.mestemplate.item.application;
 
 import com.sainti.mestemplate.global.error.BusinessException;
 import com.sainti.mestemplate.item.application.dto.CreateItemCommand;
+import com.sainti.mestemplate.item.application.dto.DeleteItemCommand;
 import com.sainti.mestemplate.item.application.dto.ItemResult;
 import com.sainti.mestemplate.item.application.port.out.ItemRepositoryPort;
 import com.sainti.mestemplate.item.domain.Item;
@@ -117,11 +118,9 @@ class ItemServiceTest {
 
         when(itemRepositoryPort.findByTenantIdAndId(1L, 10L)).thenReturn(Optional.of(item));
 
-        itemService.deleteItem(1L, 10L);
+        itemService.deleteItem(new DeleteItemCommand(1L, 10L, 99L));
 
-        ArgumentCaptor<Item> captor = ArgumentCaptor.forClass(Item.class);
-        verify(itemRepositoryPort).save(captor.capture());
-
-        assertThat(captor.getValue().isDeleted()).isTrue();
+        verify(itemRepositoryPort).softDelete(1L, 10L, 99L);
+        verify(itemRepositoryPort, org.mockito.Mockito.never()).save(any());
     }
 }

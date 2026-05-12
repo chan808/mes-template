@@ -3,6 +3,7 @@ package com.sainti.mestemplate.item.domain;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ItemTest {
@@ -55,7 +56,7 @@ public class ItemTest {
     }
 
     @Test
-    void deleteItem() {
+    void deleteDoesNotThrowForDeletableItem() {
         Item item = Item.create(
                 1L,
                 "ITEM-001",
@@ -65,9 +66,7 @@ public class ItemTest {
                 "ABS raw material"
         );
 
-        item.delete();
-
-        assertThat(item.isDeleted()).isTrue();
+        assertThatNoException().isThrownBy(item::delete);
     }
 
     @Test
