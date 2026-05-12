@@ -1,7 +1,6 @@
 package com.sainti.mestemplate.item.adapter.out.persistence.mapper;
 
 import com.sainti.mestemplate.item.adapter.out.persistence.entity.ItemEntity;
-import com.sainti.mestemplate.item.application.dto.ItemResult;
 import com.sainti.mestemplate.item.domain.Item;
 import org.springframework.stereotype.Component;
 
@@ -32,23 +31,20 @@ public class ItemPersistenceMapper {
                 entity.getUnit(),
                 entity.getStatus(),
                 entity.getDescription(),
-                entity.isDeleted()
-        );
-    }
-
-    public ItemResult toResult(ItemEntity entity) {
-        return new ItemResult(
-                entity.getId(),
-                entity.getTenantId(),
-                entity.getItemCode(),
-                entity.getItemName(),
-                entity.getItemType(),
-                entity.getUnit(),
-                entity.getStatus(),
-                entity.getDescription(),
                 entity.isDeleted(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
+        );
+    }
+
+    public void updateEntity(ItemEntity entity, Item item) {
+        entity.updateFromDomain(
+                item.getItemName(),
+                item.getItemType(),
+                item.getUnit(),
+                item.getStatus(),
+                item.getDescription(),
+                item.isDeleted()
         );
     }
 }

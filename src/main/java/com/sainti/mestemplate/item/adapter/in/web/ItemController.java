@@ -1,6 +1,7 @@
 package com.sainti.mestemplate.item.adapter.in.web;
 
 import com.sainti.mestemplate.global.response.ApiResponse;
+import com.sainti.mestemplate.global.security.MesPrincipal;
 import com.sainti.mestemplate.item.adapter.in.web.dto.ItemCreateRequest;
 import com.sainti.mestemplate.item.adapter.in.web.dto.ItemResponse;
 import com.sainti.mestemplate.item.adapter.in.web.dto.ItemSearch;
@@ -13,14 +14,16 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,17 +32,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/items")
 public class ItemController {
 
-    private static final String TENANT_HEADER = "X-Tenant-Id";
-
     private final ItemUseCase itemUseCase;
 
     @PostMapping
     public ResponseEntity<ApiResponse<ItemResponse>> createItem(
-            @RequestHeader(TENANT_HEADER) Long tenantId,
+            @AuthenticationPrincipal MesPrincipal principal,
             @Valid @RequestBody ItemCreateRequest request
     ) {
         CreateItemCommand command = new CreateItemCommand(
-                tenantId,
+                principal.tenantId(),
                 request.itemCode(),
                 request.itemName(),
                 request.itemType(),
@@ -54,12 +55,12 @@ public class ItemController {
 
     @PutMapping("/{itemId}")
     public ResponseEntity<ApiResponse<ItemResponse>> updateItem(
-            @RequestHeader(TENANT_HEADER) Long tenantId,
+            @AuthenticationPrincipal MesPrincipal principal,
             @PathVariable Long itemId,
             @Valid @RequestBody ItemUpdateRequest request
     ) {
         UpdateItemCommand command = new UpdateItemCommand(
-                tenantId,
+                principal.tenantId(),
                 itemId,
                 request.itemName(),
                 request.itemType(),
@@ -75,19 +76,20 @@ public class ItemController {
 
     @GetMapping("/{itemId}")
     public ResponseEntity<ApiResponse<ItemResponse>> getItem(
-            @RequestHeader(TENANT_HEADER) Long tenantId,
+            @AuthenticationPrincipal MesPrincipal principal,
             @PathVariable Long itemId
     ) {
-        ItemResponse response = ItemResponse.from(itemUseCase.getItem(tenantId, itemId));
+        ItemResponse response = ItemResponse.from(
+                itemUseCase.getItem(principal.tenantId(), itemId));
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ItemResponse>>> searchItems(
-            @RequestHeader(TENANT_HEADER) Long tenantId,
+            @AuthenticationPrincipal MesPrincipal principal,
             ItemSearch search,
-            Pageable pageable
+            @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         ItemQuery query = new ItemQuery(
                 search.itemCode(),
@@ -96,7 +98,8 @@ public class ItemController {
                 search.status()
         );
 
-        Page<ItemResponse> response = itemUseCase.searchItems(tenantId, query, pageable)
+        Page<ItemResponse> response = itemUseCase.searchItems(
+                        principal.tenantId(), query, pageable)
                 .map(ItemResponse::from);
 
         return ResponseEntity.ok(ApiResponse.success(response));
@@ -104,10 +107,10 @@ public class ItemController {
 
     @DeleteMapping("/{itemId}")
     public ResponseEntity<ApiResponse<Void>> deleteItem(
-            @RequestHeader(TENANT_HEADER) Long tenantId,
+            @AuthenticationPrincipal MesPrincipal principal,
             @PathVariable Long itemId
     ) {
-        itemUseCase.deleteItem(tenantId, itemId);
+        itemUseCase.deleteItem(principal.tenantId(), itemId);
 
         return ResponseEntity.ok(ApiResponse.successVoid());
     }

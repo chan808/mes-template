@@ -1,5 +1,6 @@
 package com.sainti.mestemplate.item.adapter.out.persistence;
 
+import com.sainti.mestemplate.item.adapter.out.persistence.entity.ItemEntity;
 import com.sainti.mestemplate.item.adapter.out.persistence.mapper.ItemPersistenceMapper;
 import com.sainti.mestemplate.item.adapter.out.persistence.repository.ItemJpaRepository;
 import com.sainti.mestemplate.item.application.dto.ItemQuery;
@@ -27,9 +28,15 @@ public class ItemRepositoryAdapter implements ItemRepositoryPort {
 
     @Override
     public Item save(Item item) {
-        return itemPersistenceMapper.toDomain(
-                itemJpaRepository.save(itemPersistenceMapper.toEntity(item))
-        );
+        if (item.getId() == null) {
+            return itemPersistenceMapper.toDomain(
+                    itemJpaRepository.save(itemPersistenceMapper.toEntity(item))
+            );
+        }
+        ItemEntity entity = itemJpaRepository.findById(item.getId())
+                .orElseThrow(() -> new IllegalStateException("ItemEntity not found: " + item.getId()));
+        itemPersistenceMapper.updateEntity(entity, item);
+        return itemPersistenceMapper.toDomain(itemJpaRepository.saveAndFlush(entity));
     }
 
     @Override

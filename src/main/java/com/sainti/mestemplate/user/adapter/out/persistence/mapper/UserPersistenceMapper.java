@@ -1,7 +1,6 @@
 package com.sainti.mestemplate.user.adapter.out.persistence.mapper;
 
 import com.sainti.mestemplate.user.adapter.out.persistence.entity.UserEntity;
-import com.sainti.mestemplate.user.application.dto.UserResult;
 import com.sainti.mestemplate.user.domain.User;
 import org.springframework.stereotype.Component;
 
@@ -30,21 +29,18 @@ public class UserPersistenceMapper {
                 entity.getDisplayName(),
                 entity.getRole(),
                 entity.getStatus(),
-                entity.isDeleted()
-        );
-    }
-
-    public UserResult toResult(UserEntity entity) {
-        return new UserResult(
-                entity.getId(),
-                entity.getTenantId(),
-                entity.getLoginId(),
-                entity.getDisplayName(),
-                entity.getRole(),
-                entity.getStatus(),
                 entity.isDeleted(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
+        );
+    }
+
+    public void updateEntity(UserEntity entity, User user) {
+        entity.updateFromDomain(
+                user.getDisplayName(),
+                user.getRole(),
+                user.getStatus(),
+                user.isDeleted()
         );
     }
 }

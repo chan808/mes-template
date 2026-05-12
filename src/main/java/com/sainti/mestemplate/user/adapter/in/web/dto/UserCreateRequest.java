@@ -11,7 +11,7 @@ public record UserCreateRequest(
         String loginId,
 
         @NotBlank
-        @Size(min = 8, max = 100)
+        @Size(min = 8, max = 64)
         String password,
 
         @NotBlank

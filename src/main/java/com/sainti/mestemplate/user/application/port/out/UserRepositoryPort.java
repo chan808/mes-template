@@ -16,5 +16,7 @@ public interface UserRepositoryPort {
 
     Optional<User> findByTenantIdAndId(Long tenantId, Long userId);
 
+    Optional<User> findByTenantIdAndLoginId(Long tenantId, String loginId);
+
     Page<UserResult> search(Long tenantId, UserQuery query, Pageable pageable);
 }

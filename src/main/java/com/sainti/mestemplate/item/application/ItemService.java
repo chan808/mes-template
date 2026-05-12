@@ -95,8 +95,8 @@ public class ItemService implements ItemUseCase {
                 item.getStatus(),
                 item.getDescription(),
                 item.isDeleted(),
-                null,
-                null
+                item.getCreatedAt(),
+                item.getUpdatedAt()
         );
     }
 }

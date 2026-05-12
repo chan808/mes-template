@@ -93,8 +93,8 @@ public class UserService implements UserUseCase {
                 user.getRole(),
                 user.getStatus(),
                 user.isDeleted(),
-                null,
-                null
+                user.getCreatedAt(),
+                user.getUpdatedAt()
         );
     }
 }

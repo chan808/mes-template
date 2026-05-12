@@ -1,6 +1,10 @@
 package com.sainti.mestemplate.user.adapter.in.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sainti.mestemplate.global.security.JwtAuthenticationFilter;
+import com.sainti.mestemplate.global.security.JwtProvider;
+import com.sainti.mestemplate.global.security.MesPrincipal;
+import com.sainti.mestemplate.global.security.SecurityConfig;
 import com.sainti.mestemplate.user.adapter.in.web.dto.UserCreateRequest;
 import com.sainti.mestemplate.user.application.dto.CreateUserCommand;
 import com.sainti.mestemplate.user.application.dto.UserResult;
@@ -10,9 +14,12 @@ import com.sainti.mestemplate.user.domain.UserStatus;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -24,14 +31,21 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(UserController.class)
-@AutoConfigureMockMvc(addFilters = false)
+@WebMvcTest(
+        controllers = UserController.class,
+        excludeFilters = @ComponentScan.Filter(
+                type = FilterType.ASSIGNABLE_TYPE,
+                classes = {SecurityConfig.class, JwtAuthenticationFilter.class}
+        )
+)
 class UserControllerTest {
 
     @Autowired
@@ -42,6 +56,18 @@ class UserControllerTest {
 
     @MockitoBean
     private UserUseCase userUseCase;
+
+    @MockitoBean
+    private JwtProvider jwtProvider;
+
+    private static UsernamePasswordAuthenticationToken mockAuth() {
+        MesPrincipal principal = new MesPrincipal(100L, 1L);
+        return new UsernamePasswordAuthenticationToken(
+                principal,
+                null,
+                List.of(new SimpleGrantedAuthority("ROLE_TENANT_ADMIN"))
+        );
+    }
 
     @Test
     void createUser() throws Exception {
@@ -67,7 +93,8 @@ class UserControllerTest {
         );
 
         mockMvc.perform(post("/api/v1/users")
-                        .header("X-Tenant-Id", 1L)
+                        .with(authentication(mockAuth()))
+                        .with(csrf())
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -99,12 +126,14 @@ class UserControllerTest {
                 """;
 
         mockMvc.perform(post("/api/v1/users")
-                        .header("X-Tenant-Id", 1L)
+                        .with(authentication(mockAuth()))
+                        .with(csrf())
                         .contentType("application/json")
                         .content(request))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.message").value("Invalid input"));
+                .andExpect(jsonPath("$.errorCode").value("COMMON_001"))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("loginId")));
     }
 
     @Test
@@ -124,7 +153,7 @@ class UserControllerTest {
         when(userUseCase.getUser(1L, 10L)).thenReturn(result);
 
         mockMvc.perform(get("/api/v1/users/{userId}", 10L)
-                        .header("X-Tenant-Id", 1L))
+                        .with(authentication(mockAuth())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.id").value(10L))
@@ -149,7 +178,7 @@ class UserControllerTest {
                 .thenReturn(new PageImpl<>(List.of(result)));
 
         mockMvc.perform(get("/api/v1/users")
-                        .header("X-Tenant-Id", 1L)
+                        .with(authentication(mockAuth()))
                         .param("displayName", "Operator"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -160,7 +189,8 @@ class UserControllerTest {
     @Test
     void deleteUser() throws Exception {
         mockMvc.perform(delete("/api/v1/users/{userId}", 10L)
-                        .header("X-Tenant-Id", 1L))
+                        .with(authentication(mockAuth()))
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("OK"));

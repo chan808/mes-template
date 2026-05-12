@@ -112,4 +112,15 @@ public class UserEntity extends BaseEntity {
     public boolean isDeleted() {
         return deleted;
     }
+
+    // update 경로에서 managed entity에 도메인 상태를 반영한다. 새 객체를 만들지 않아 createdAt 등 audit 필드가 유지된다.
+    public void updateFromDomain(String displayName, UserRole role, UserStatus status, boolean deleted) {
+        this.displayName = displayName;
+        this.role = role;
+        this.status = status;
+        if (!this.deleted && deleted) {
+            this.deleted = true;
+            softDelete();
+        }
+    }
 }

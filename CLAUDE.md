@@ -23,13 +23,13 @@ The developer is expected to write the code directly while using AI as a mentor,
 - Gradle
 - PostgreSQL
 - Spring MVC REST API
-- Spring Security
-- JWT first, OAuth2/OIDC later if needed
+- Spring Security (stateless JWT implemented; OAuth2/OIDC later if needed)
+- JWT access token (implemented), refresh token not yet added
 - Spring Data JPA / Hibernate
 - QueryDSL for complex read queries
-- Flyway or Liquibase for DB migration
+- Flyway or Liquibase for DB migration (not yet — must add before production)
 - Lombok, used carefully
-- MapStruct or manual mappers, choose one convention and stay consistent
+- Manual mappers only (MapStruct removed — see docs/ADR.md ADR-012)
 - springdoc-openapi / Swagger
 - Testcontainers for integration tests when possible
 - Spring Boot Actuator for production readiness
