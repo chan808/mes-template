@@ -85,8 +85,8 @@ public class Item {
         this.description = description;
     }
 
+    // 향후 재고 잔량·진행 중인 작업지시 등 삭제 불가 조건 검증 위치
     public void delete() {
-        this.deleted = true;
     }
 
     public Long getId() {

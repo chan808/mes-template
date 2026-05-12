@@ -79,8 +79,8 @@ public class User {
         this.status = status;
     }
 
+    // 향후 활성 세션·권한 등 삭제 불가 조건 검증 위치
     public void delete() {
-        this.deleted = true;
     }
 
     public Long getId() {
