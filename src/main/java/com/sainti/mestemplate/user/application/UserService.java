@@ -1,8 +1,11 @@
 package com.sainti.mestemplate.user.application;
 
 import com.sainti.mestemplate.global.error.BusinessException;
+import com.sainti.mestemplate.user.application.dto.ChangeMyPasswordCommand;
 import com.sainti.mestemplate.user.application.dto.CreateUserCommand;
 import com.sainti.mestemplate.user.application.dto.DeleteUserCommand;
+import com.sainti.mestemplate.user.application.dto.ResetPasswordCommand;
+import com.sainti.mestemplate.user.application.dto.ResetPasswordResult;
 import com.sainti.mestemplate.user.application.dto.UpdateUserCommand;
 import com.sainti.mestemplate.user.application.dto.UserQuery;
 import com.sainti.mestemplate.user.application.dto.UserResult;
@@ -16,10 +19,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
+
 @RequiredArgsConstructor
 @Service
 @Transactional
 public class UserService implements UserUseCase {
+
+    private static final String TEMP_CHARS =
+            "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+    private static final int TEMP_PASSWORD_LENGTH = 12;
+    private static final int MAX_LOGIN_ATTEMPTS = 5;
 
     private final UserRepositoryPort userRepositoryPort;
     private final PasswordEncoder passwordEncoder;
@@ -30,6 +40,8 @@ public class UserService implements UserUseCase {
             throw new BusinessException(UserErrorCode.LOGIN_ID_DUPLICATED);
         }
 
+        validatePasswordStrength(command.rawPassword(), command.loginId());
+
         String passwordHash = passwordEncoder.encode(command.rawPassword());
         User user = User.create(
                 command.tenantId(),
@@ -39,9 +51,7 @@ public class UserService implements UserUseCase {
                 command.role()
         );
 
-        User savedUser = userRepositoryPort.save(user);
-
-        return toResult(savedUser);
+        return toResult(userRepositoryPort.save(user));
     }
 
     @Override
@@ -49,15 +59,9 @@ public class UserService implements UserUseCase {
         User user = userRepositoryPort.findByTenantIdAndId(command.tenantId(), command.userId())
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
-        user.update(
-                command.displayName(),
-                command.role(),
-                command.status()
-        );
+        user.update(command.displayName(), command.role(), command.status());
 
-        User savedUser = userRepositoryPort.save(user);
-
-        return toResult(savedUser);
+        return toResult(userRepositoryPort.save(user));
     }
 
     @Override
@@ -81,8 +85,49 @@ public class UserService implements UserUseCase {
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
         user.delete();
-
         userRepositoryPort.softDelete(command.tenantId(), command.userId(), command.deletedBy());
+    }
+
+    @Override
+    public ResetPasswordResult resetPassword(ResetPasswordCommand command) {
+        User user = userRepositoryPort.findByTenantIdAndId(command.tenantId(), command.targetUserId())
+                .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+
+        String temporaryPassword = generateTemporaryPassword();
+        user.resetPassword(passwordEncoder.encode(temporaryPassword));
+        userRepositoryPort.save(user);
+
+        return new ResetPasswordResult(temporaryPassword);
+    }
+
+    @Override
+    public void changeMyPassword(ChangeMyPasswordCommand command) {
+        User user = userRepositoryPort.findByTenantIdAndId(command.tenantId(), command.userId())
+                .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+
+        if (!passwordEncoder.matches(command.currentPassword(), user.getPasswordHash())) {
+            throw new BusinessException(UserErrorCode.INVALID_CURRENT_PASSWORD);
+        }
+
+        validatePasswordStrength(command.newPassword(), user.getLoginId());
+
+        user.changePassword(passwordEncoder.encode(command.newPassword()));
+        userRepositoryPort.save(user);
+    }
+
+    private void validatePasswordStrength(String password, String loginId) {
+        if (loginId != null && password.toLowerCase().contains(loginId.toLowerCase())) {
+            throw new BusinessException(UserErrorCode.WEAK_PASSWORD);
+        }
+    }
+
+    private String generateTemporaryPassword() {
+        SecureRandom random = new SecureRandom();
+        char[] password = new char[TEMP_PASSWORD_LENGTH];
+        for (int i = 0; i < TEMP_PASSWORD_LENGTH; i++) {
+            password[i] = TEMP_CHARS.charAt(random.nextInt(TEMP_CHARS.length()));
+        }
+        return new String(password);
     }
 
     private UserResult toResult(User user) {
@@ -94,6 +139,7 @@ public class UserService implements UserUseCase {
                 user.getRole(),
                 user.getStatus(),
                 user.isDeleted(),
+                user.isMustChangePassword(),
                 user.getCreatedAt(),
                 user.getUpdatedAt()
         );

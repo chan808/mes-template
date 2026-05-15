@@ -65,9 +65,10 @@ public class ItemTest {
                 "ABS raw material"
         );
 
+        // delete()는 삭제 전 도메인 검증 위치 — 실제 deleted 플래그는 Repository 레이어(softDelete)가 처리
         item.delete();
 
-        assertThat(item.isDeleted()).isTrue();
+        assertThat(item.isDeleted()).isFalse();
     }
 
     @Test

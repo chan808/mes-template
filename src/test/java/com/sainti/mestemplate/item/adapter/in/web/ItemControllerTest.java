@@ -10,6 +10,7 @@ import com.sainti.mestemplate.item.application.dto.ItemResult;
 import com.sainti.mestemplate.item.application.port.in.ItemUseCase;
 import com.sainti.mestemplate.item.domain.ItemStatus;
 import com.sainti.mestemplate.item.domain.ItemType;
+import com.sainti.mestemplate.user.domain.UserRole;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,8 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 classes = {SecurityConfig.class, JwtAuthenticationFilter.class}
         )
 )
-class
-ItemControllerTest {
+class ItemControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -61,7 +61,7 @@ ItemControllerTest {
     private JwtProvider jwtProvider;
 
     private static UsernamePasswordAuthenticationToken mockAuth() {
-        MesPrincipal principal = new MesPrincipal(100L, 1L);
+        MesPrincipal principal = new MesPrincipal(100L, 1L, UserRole.MES_OPERATOR, false);
         return new UsernamePasswordAuthenticationToken(
                 principal,
                 null,
@@ -203,6 +203,6 @@ ItemControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("OK"));
 
-        verify(itemUseCase).deleteItem(1L, 10L);
+        verify(itemUseCase).deleteItem(any(com.sainti.mestemplate.item.application.dto.DeleteItemCommand.class));
     }
 }

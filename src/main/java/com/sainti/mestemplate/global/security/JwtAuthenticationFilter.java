@@ -1,5 +1,8 @@
 package com.sainti.mestemplate.global.security;
 
+import com.sainti.mestemplate.user.application.port.out.UserRepositoryPort;
+import com.sainti.mestemplate.user.domain.User;
+import com.sainti.mestemplate.user.domain.UserStatus;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -15,12 +18,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
+    private final UserRepositoryPort userRepositoryPort;
 
     @Override
     protected void doFilterInternal(
@@ -34,14 +39,40 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(token)) {
             try {
                 JwtProvider.TokenPayload payload = jwtProvider.parseToken(token);
-                MesPrincipal principal = new MesPrincipal(payload.userId(), payload.tenantId());
+
+                // role·status는 JWT claim이 아닌 DB에서 조회 — 변경 즉시 반영
+                Optional<User> userOpt = userRepositoryPort.findByTenantIdAndId(
+                        payload.tenantId(), payload.userId()
+                );
+
+                if (userOpt.isEmpty()) {
+                    SecurityContextHolder.clearContext();
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
+                User user = userOpt.get();
+
+                if (user.getStatus() != UserStatus.ACTIVE) {
+                    SecurityContextHolder.clearContext();
+                    writeLockedResponse(response);
+                    return;
+                }
+
+                MesPrincipal principal = new MesPrincipal(
+                        user.getId(),
+                        user.getTenantId(),
+                        user.getRole(),
+                        user.isMustChangePassword()
+                );
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 principal,
                                 null,
-                                List.of(new SimpleGrantedAuthority("ROLE_" + payload.role()))
+                                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
                         );
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+
             } catch (JwtException | IllegalArgumentException e) {
                 SecurityContextHolder.clearContext();
             }
@@ -56,5 +87,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return bearer.substring(7);
         }
         return null;
+    }
+
+    private void writeLockedResponse(HttpServletResponse response) throws IOException {
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(
+                "{\"success\":false,\"message\":\"User account is not active\",\"errorCode\":\"USER_NOT_ACTIVE\"}"
+        );
     }
 }

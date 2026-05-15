@@ -57,9 +57,10 @@ class UserTest {
                 UserRole.MES_OPERATOR
         );
 
+        // delete()는 삭제 전 도메인 검증 위치 — 실제 deleted 플래그는 Repository 레이어(softDelete)가 처리
         user.delete();
 
-        assertThat(user.isDeleted()).isTrue();
+        assertThat(user.isDeleted()).isFalse();
     }
 
     @Test

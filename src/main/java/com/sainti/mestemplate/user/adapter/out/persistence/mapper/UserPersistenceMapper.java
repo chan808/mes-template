@@ -16,7 +16,10 @@ public class UserPersistenceMapper {
                 user.getDisplayName(),
                 user.getRole(),
                 user.getStatus(),
-                user.isDeleted()
+                user.isDeleted(),
+                user.getFailedLoginCount(),
+                user.getLastFailedLoginAt(),
+                user.isMustChangePassword()
         );
     }
 
@@ -30,6 +33,9 @@ public class UserPersistenceMapper {
                 entity.getRole(),
                 entity.getStatus(),
                 entity.isDeleted(),
+                entity.getFailedLoginCount(),
+                entity.getLastFailedLoginAt(),
+                entity.isMustChangePassword(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
         );
@@ -39,7 +45,11 @@ public class UserPersistenceMapper {
         entity.updateFromDomain(
                 user.getDisplayName(),
                 user.getRole(),
-                user.getStatus()
+                user.getStatus(),
+                user.getPasswordHash(),
+                user.getFailedLoginCount(),
+                user.getLastFailedLoginAt(),
+                user.isMustChangePassword()
         );
     }
 }

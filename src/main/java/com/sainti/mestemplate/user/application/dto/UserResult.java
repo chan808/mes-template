@@ -13,6 +13,7 @@ public record UserResult(
         UserRole role,
         UserStatus status,
         boolean deleted,
+        boolean mustChangePassword,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {

@@ -14,6 +14,8 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(
         name = "users",
@@ -57,6 +59,15 @@ public class UserEntity extends BaseEntity {
     @Column(nullable = false)
     private boolean deleted;
 
+    @Column(name = "failed_login_count", nullable = false)
+    private int failedLoginCount;
+
+    @Column(name = "last_failed_login_at")
+    private LocalDateTime lastFailedLoginAt;
+
+    @Column(name = "must_change_password", nullable = false)
+    private boolean mustChangePassword;
+
     protected UserEntity() {
     }
 
@@ -68,7 +79,10 @@ public class UserEntity extends BaseEntity {
             String displayName,
             UserRole role,
             UserStatus status,
-            boolean deleted
+            boolean deleted,
+            int failedLoginCount,
+            LocalDateTime lastFailedLoginAt,
+            boolean mustChangePassword
     ) {
         UserEntity entity = new UserEntity();
         entity.id = id;
@@ -79,45 +93,37 @@ public class UserEntity extends BaseEntity {
         entity.role = role;
         entity.status = status;
         entity.deleted = deleted;
+        entity.failedLoginCount = failedLoginCount;
+        entity.lastFailedLoginAt = lastFailedLoginAt;
+        entity.mustChangePassword = mustChangePassword;
         return entity;
     }
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public Long getTenantId() { return tenantId; }
+    public String getLoginId() { return loginId; }
+    public String getPasswordHash() { return passwordHash; }
+    public String getDisplayName() { return displayName; }
+    public UserRole getRole() { return role; }
+    public UserStatus getStatus() { return status; }
+    public boolean isDeleted() { return deleted; }
+    public int getFailedLoginCount() { return failedLoginCount; }
+    public LocalDateTime getLastFailedLoginAt() { return lastFailedLoginAt; }
+    public boolean isMustChangePassword() { return mustChangePassword; }
 
-    public Long getTenantId() {
-        return tenantId;
-    }
-
-    public String getLoginId() {
-        return loginId;
-    }
-
-    public String getPasswordHash() {
-        return passwordHash;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public UserRole getRole() {
-        return role;
-    }
-
-    public UserStatus getStatus() {
-        return status;
-    }
-
-    public boolean isDeleted() {
-        return deleted;
-    }
-
-    public void updateFromDomain(String displayName, UserRole role, UserStatus status) {
+    // 모든 가변 필드를 도메인 값으로 동기화
+    public void updateFromDomain(
+            String displayName, UserRole role, UserStatus status,
+            String passwordHash, int failedLoginCount, LocalDateTime lastFailedLoginAt,
+            boolean mustChangePassword
+    ) {
         this.displayName = displayName;
         this.role = role;
         this.status = status;
+        this.passwordHash = passwordHash;
+        this.failedLoginCount = failedLoginCount;
+        this.lastFailedLoginAt = lastFailedLoginAt;
+        this.mustChangePassword = mustChangePassword;
     }
 
     public void softDelete(Long deletedBy) {

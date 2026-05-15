@@ -7,6 +7,7 @@ import com.sainti.mestemplate.global.security.MesPrincipal;
 import com.sainti.mestemplate.global.security.SecurityConfig;
 import com.sainti.mestemplate.user.adapter.in.web.dto.UserCreateRequest;
 import com.sainti.mestemplate.user.application.dto.CreateUserCommand;
+import com.sainti.mestemplate.user.application.dto.DeleteUserCommand;
 import com.sainti.mestemplate.user.application.dto.UserResult;
 import com.sainti.mestemplate.user.application.port.in.UserUseCase;
 import com.sainti.mestemplate.user.domain.UserRole;
@@ -61,7 +62,7 @@ class UserControllerTest {
     private JwtProvider jwtProvider;
 
     private static UsernamePasswordAuthenticationToken mockAuth() {
-        MesPrincipal principal = new MesPrincipal(100L, 1L);
+        MesPrincipal principal = new MesPrincipal(100L, 1L, UserRole.TENANT_ADMIN, false);
         return new UsernamePasswordAuthenticationToken(
                 principal,
                 null,
@@ -79,6 +80,7 @@ class UserControllerTest {
                 UserRole.MES_OPERATOR,
                 UserStatus.ACTIVE,
                 false,
+                true,
                 LocalDateTime.of(2026, 5, 8, 10, 0),
                 LocalDateTime.of(2026, 5, 8, 10, 0)
         );
@@ -146,6 +148,7 @@ class UserControllerTest {
                 UserRole.MES_OPERATOR,
                 UserStatus.ACTIVE,
                 false,
+                false,
                 null,
                 null
         );
@@ -169,6 +172,7 @@ class UserControllerTest {
                 "Operator One",
                 UserRole.MES_OPERATOR,
                 UserStatus.ACTIVE,
+                false,
                 false,
                 null,
                 null
@@ -195,6 +199,6 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("OK"));
 
-        verify(userUseCase).deleteUser(1L, 10L);
+        verify(userUseCase).deleteUser(any(DeleteUserCommand.class));
     }
 }

@@ -5,7 +5,6 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import org.springframework.util.StringUtils;
 
 import javax.crypto.SecretKey;
@@ -26,30 +25,29 @@ public class JwtProvider {
         this.expirationMs = expirationMs;
     }
 
-    public record TokenPayload(Long userId, Long tenantId, String role) {}
+    // JWT에는 userId, tenantId만 — role/status는 매 요청마다 DB에서 조회
+    public record TokenPayload(Long userId, Long tenantId) {}
 
     public TokenPayload parseToken(String token) {
         Claims claims = parseClaims(token);
 
         String subject = claims.getSubject();
         Long tenantId = claims.get("tenantId", Long.class);
-        String role = claims.get("role", String.class);
 
-        if (!StringUtils.hasText(subject) || tenantId == null || !StringUtils.hasText(role)) {
+        if (!StringUtils.hasText(subject) || tenantId == null) {
             throw new IllegalArgumentException("JWT is missing required claims");
         }
 
-        return new TokenPayload(Long.valueOf(subject), tenantId, role);
+        return new TokenPayload(Long.valueOf(subject), tenantId);
     }
 
-    public String generateToken(Long userId, Long tenantId, String role) {
+    public String generateToken(Long userId, Long tenantId) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
                 .subject(String.valueOf(userId))
                 .claim("tenantId", tenantId)
-                .claim("role", role)
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(secretKey)
@@ -62,17 +60,5 @@ public class JwtProvider {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-    }
-
-    public Long getUserId(String token) {
-        return Long.valueOf(parseClaims(token).getSubject());
-    }
-
-    public Long getTenantId(String token) {
-        return parseClaims(token).get("tenantId", Long.class);
-    }
-
-    public String getRole(String token) {
-        return parseClaims(token).get("role", String.class);
     }
 }

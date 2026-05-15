@@ -5,9 +5,15 @@ import com.sainti.mestemplate.auth.application.dto.LoginResult;
 public record LoginResponse(
         String accessToken,
         Long userId,
-        String role
+        String role,
+        boolean mustChangePassword
 ) {
     public static LoginResponse from(LoginResult result) {
-        return new LoginResponse(result.accessToken(), result.userId(), result.role());
+        return new LoginResponse(
+                result.accessToken(),
+                result.userId(),
+                result.role(),
+                result.mustChangePassword()
+        );
     }
 }
